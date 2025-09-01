@@ -1,0 +1,440 @@
+/* General layout */
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: Arial, sans-serif;
+}
+main {
+    flex: 1;
+    padding: 20px;
+}
+footer {
+    background: #222;
+    color: #fff;
+    text-align: center;
+    padding: 12px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    font-size: 14px;
+}
+
+/* Minimal header (login/register) */
+#minimal-header {
+    background: #004080;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* Full header (after login) */
+#full-header {
+    background: #004080;
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+#full-header h1 {
+    margin: 0;
+    font-size: 22px;
+}
+nav a {
+    color: white;
+    margin: 0 12px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+nav a:hover {
+    color: #ffcc00;
+}
+
+/* Logout button */
+#logout-btn {
+    background: #ff3333;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: bold;
+    text-decoration: none;
+}
+#logout-btn:hover {
+    background: #cc0000;
+}
+
+/* Center form container */
+.form-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 100px); /* full height minus header+footer */
+}
+
+/* White card box */
+.form-box {
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.15);
+    width: 350px;
+    text-align: center;
+}
+
+/* Heading inside the box */
+.form-box h2 {
+    margin-bottom: 20px;
+    color: #004080;
+    font-size: 22px;
+}
+
+/* Inputs */
+.form-box input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+/* Button matches input width */
+.form-box button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    background: #004080;
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+.form-box button:hover {
+    background: #003366;
+}
+
+.form-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: calc(100vh - 100px); /* exclude header/footer */
+}
+
+.form-box {
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    width: 350px;
+    text-align: center;
+}
+
+.form-box h2 {
+    margin-bottom: 20px;
+    color: #004080;
+}
+
+.form-box input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.form-box button {
+    width: 100%;
+    padding: 10px;
+    background: #004080;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.form-box button:hover {
+    background: #0059b3;
+}
+
+.form-link {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #555;
+}
+
+.form-link a {
+    color: #004080;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.form-link a:hover {
+    text-decoration: underline;
+}
+
+.error-message {
+    background: #ffe6e6;
+    color: #cc0000;
+    padding: 10px;
+    margin-top: 15px;
+    border: 1px solid #cc0000;
+    border-radius: 5px;
+    text-align: left;
+    font-size: 14px;
+}
+
+.password-rules {
+    text-align: left;
+    margin-top: 15px;
+    font-size: 14px;
+    color: #555;
+}
+
+.password-rules h4 {
+    margin-bottom: 5px;
+    color: #004080;
+    font-size: 15px;
+}
+
+.password-rules ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+/* Notes Page */
+.notes-container {
+    max-width: 800px;
+    margin: 20px auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.note-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.note-form input,
+.note-form textarea,
+.note-form button {
+    padding: 10px;
+    font-size: 14px;
+    width: 100%;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.note-form button {
+    background: #4CAF50;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+.note-form button:hover {
+    background: #45a049;
+}
+
+.notes-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+}
+
+.note-card {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    padding: 15px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.note-card h3 {
+    margin: 0 0 5px;
+    font-size: 16px;
+}
+
+.note-card p {
+    margin: 0;
+    font-size: 14px;
+    color: #555;
+}
+
+.note-actions button {
+    margin-left: 5px;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.note-actions button:first-child {
+    background: #2196F3;
+    color: #fff;
+}
+
+.note-actions button:first-child:hover {
+    background: #1976D2;
+}
+
+.note-actions button:last-child {
+    background: #f44336;
+    color: #fff;
+}
+
+.note-actions button:last-child:hover {
+    background: #d32f2f;
+}
+
+/* Profile Page */
+.profile-container {
+    max-width: 500px;
+    margin: 30px auto;
+    padding: 25px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.profile-container h2 {
+    text-align: center;
+    color: #004080;
+    margin-bottom: 20px;
+}
+
+.profile-form .form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+
+.profile-form label {
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #333;
+}
+
+.profile-form input {
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.button-group {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.button-group button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #fff;
+    background-color: #004080;
+    transition: background 0.3s;
+}
+
+.button-group button:hover {
+    background-color: #003366;
+}
+
+#cancel-btn {
+    background-color: #f44336;
+}
+
+#cancel-btn:hover {
+    background-color: #d32f2f;
+}
+
+#update-btn {
+    background-color: #4CAF50;
+}
+
+#update-btn:hover {
+    background-color: #45a049;
+}
+
+/* Reset Password Section */
+.reset-password-container {
+    margin-top: 40px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #fafafa;
+    max-width: 500px;
+}
+
+.reset-password-container h3 {
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+    color: #333;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 5px;
+}
+
+.password-form .form-group {
+    margin-bottom: 15px;
+}
+
+.password-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+}
+
+.password-form input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.password-form input[type="password"]:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+#reset-password-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #007bff;
+    border: none;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s ease;
+}
+
+#reset-password-btn:hover {
+    background: #0056b3;
+}
+
+

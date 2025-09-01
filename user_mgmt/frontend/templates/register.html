@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<div class="form-container">
+    <div class="form-box">
+        <h2>Register</h2>
+        <form id="register-form">
+            <input type="text" id="username" placeholder="Username" required>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button type="submit">Register</button>
+        </form>
+
+        <!-- Error message box -->
+        <div id="error-message" class="error-message" style="display:none;"></div>
+
+        <!-- Password rules -->
+        <div class="password-rules">
+            <h4>Password must:</h4>
+            <ul>
+                <li>Be at least 8 characters long</li>
+                <li>Not be too common (e.g., "password123")</li>
+                <li>Not be entirely numeric</li>
+                <li>Not be too similar to your username</li>
+            </ul>
+        </div>
+
+        <p class="form-link">
+            Already have an account? <a href="{% url 'login' %}">Login</a>
+        </p>
+    </div>
+</div>
+
+<script>
+$("#register-form").submit(function(e){
+    e.preventDefault();
+    $.post("/api/accounts/register/", {
+        username: $("#username").val(),
+        email: $("#email").val(),
+        password: $("#password").val()
+    }).done(function(){
+        alert("Registration successful! Please login.");
+        window.location.href = "{% url 'login' %}";
+    }).fail(function(xhr){
+        let errorData = xhr.responseJSON;
+        let errorText = "";
+
+        if (errorData) {
+            // Format errors into readable text
+            Object.keys(errorData).forEach(key => {
+                errorText += errorData[key].join("<br>") + "<br>";
+            });
+        } else {
+            errorText = "Error registering user.";
+        }
+
+        $("#error-message").html(errorText).show();
+    });
+});
+</script>
+{% endblock %}

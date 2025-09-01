@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+<div class="profile-container">
+    <h2>My Profile</h2>
+
+    <form id="profile-form" class="profile-form">
+        <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="full_name" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Date of Birth</label>
+            <input type="date" id="date_of_birth" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="email" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Address</label>
+            <input type="text" id="address" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Gender</label>
+            <select id="gender" disabled>
+                <option value="">Select Gender</option>
+                <option value="M">Male</option>
+                <option value="F">Female</option>
+                <option value="O">Other</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Mobile</label>
+            <input type="text" id="mobile" readonly>
+        </div>
+
+        <div class="button-group">
+            <button type="button" id="edit-btn">Edit</button>
+            <button type="submit" id="update-btn" style="display:none;">Update</button>
+            <button type="button" id="cancel-btn" style="display:none;">Cancel</button>
+        </div>
+    </form>
+
+    <!-- Reset Password Section -->
+    <div class="reset-password-container">
+        <h3>Reset Password</h3>
+        <form id="password-form" class="password-form">
+            <div class="form-group">
+                <label>Old Password</label>
+                <input type="password" id="old_password" required>
+            </div>
+            <div class="form-group">
+                <label>New Password</label>
+                <input type="password" id="new_password1" required>
+            </div>
+            <div class="form-group">
+                <label>Confirm New Password</label>
+                <input type="password" id="new_password2" required>
+            </div>
+            <button type="submit" id="reset-password-btn">Reset Password</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function loadProfile() {
+    if ($("#gender option").length <= 1) {
+        const genderChoices = [
+            { value: 'M', label: 'Male' },
+            { value: 'F', label: 'Female' },
+            { value: 'O', label: 'Other' }
+        ];
+        genderChoices.forEach(choice => {
+            $("#gender").append(`<option value="${choice.value}">${choice.label}</option>`);
+        });
+    }
+    
+    $.ajax({
+        url: "/api/accounts/profile/",
+        headers: { Authorization: "Bearer " + localStorage.getItem("access") },
+        success: function(data){
+            $("#full_name").val(data.full_name);
+            $("#date_of_birth").val(data.date_of_birth);
+            $("#email").val(data.email);
+            $("#address").val(data.address);
+            $("#gender").val(data.gender);
+            $("#mobile").val(data.mobile_number);
+        }
+    });
+}
+
+// Toggle edit mode
+$("#edit-btn").click(function() {
+    $("#profile-form input").prop("readonly", false);
+    $("#profile-form select").prop("disabled", false);
+    $("#edit-btn").hide();
+    $("#update-btn, #cancel-btn").show();
+});
+
+$("#cancel-btn").click(function() {
+    loadProfile(); 
+    $("#profile-form input").prop("readonly", true);
+    $("#profile-form select").prop("disabled", true);
+    $("#update-btn, #cancel-btn").hide();
+    $("#edit-btn").show();
+});
+
+// Update profile
+$("#profile-form").submit(function(e){
+    e.preventDefault();
+    $.ajax({
+        url: "/api/accounts/profile/",
+        method: "PUT",
+        headers: { Authorization: "Bearer " + localStorage.getItem("access") },
+        data: {
+            full_name: $("#full_name").val(),
+            date_of_birth: $("#date_of_birth").val(),
+            email: $("#email").val(),
+            address: $("#address").val(),
+            gender: $("#gender").val(),
+            mobile_number: $("#mobile").val()
+        },
+        success: function(){
+            alert("Profile updated successfully!");
+            $("#profile-form input").prop("readonly", true);
+            $("#profile-form select").prop("disabled", true);
+            $("#update-btn, #cancel-btn").hide();
+            $("#edit-btn").show();
+        },
+        error: function(xhr, status, error) {
+            alert("Error updating profile: " + error);
+        }
+    });
+});
+
+// Reset password
+$("#password-form").submit(function(e){
+    e.preventDefault();
+    const oldPassword = $("#old_password").val();
+    const newPassword1 = $("#new_password1").val();
+    const newPassword2 = $("#new_password2").val();
+
+    if (newPassword1 !== newPassword2) {
+        alert("New passwords do not match!");
+        return;
+    }
+
+    $.ajax({
+        url: "/api/accounts/password-change/",
+        method: "POST",
+        headers: { Authorization: "Bearer " + localStorage.getItem("access") },
+        data: {
+            old_password: oldPassword,
+            new_password: newPassword1,
+            confirm_password: newPassword2
+        },
+        success: function(){
+            alert("Password changed successfully!");
+            $("#password-form")[0].reset();
+            // Clear tokens from localStorage/sessionStorage
+            localStorage.clear();
+            sessionStorage.clear();
+
+            // Redirect to login page
+            window.location.href = "/login";
+        },
+        error: function(xhr, status, error) {
+            alert("Error changing password: " + (xhr.responseJSON?.detail || error));
+        }
+    });
+});
+
+$(document).ready(function() {
+    loadProfile();
+});
+</script>
+{% endblock %}

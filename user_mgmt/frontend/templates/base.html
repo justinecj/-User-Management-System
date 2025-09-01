@@ -1,0 +1,375 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}User Management{% endblock %}</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <!-- Minimal header for login/register -->
+    <header id="minimal-header" style="display:none;">
+        User Management System
+    </header>
+
+    <!-- Full header for logged-in pages -->
+    <header id="full-header" style="display:none;">
+        <h1>User Management System</h1>
+        <nav>
+            <a href="{% url 'notes' %}">Index</a>
+            <a href="{% url 'profile' %}">Profile</a>
+            <a href="#" id="logout-btn">Logout</a>
+        </nav>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>&copy; 2025 My Company. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+$(document).ready(async function () {
+    // Token management functions
+    const TokenManager = {
+        getAccessToken: () => {
+            const token = sessionStorage.getItem("access") || localStorage.getItem("access");
+            console.log('Getting access token:', token ? 'Found' : 'Not found');
+            return token;
+        },
+        
+        getRefreshToken: () => {
+            const token = sessionStorage.getItem("refresh") || localStorage.getItem("refresh");
+            console.log('Getting refresh token:', token ? 'Found' : 'Not found');
+            return token;
+        },
+        
+        setTokens: (accessToken, refreshToken) => {
+            console.log('Setting tokens');
+            localStorage.setItem("access", accessToken);
+            localStorage.setItem("refresh", refreshToken);
+            // Also set in sessionStorage for current session
+            sessionStorage.setItem("access", accessToken);
+            sessionStorage.setItem("refresh", refreshToken);
+        },
+        
+        clearTokens: () => {
+            console.log('Clearing tokens');
+            localStorage.removeItem("access");
+            localStorage.removeItem("refresh");
+            sessionStorage.removeItem("access");
+            sessionStorage.removeItem("refresh");
+        }
+    };
+
+    const accessToken = TokenManager.getAccessToken();
+    const refreshToken = TokenManager.getRefreshToken();
+    const path = window.location.pathname;
+
+    console.log('Current path:', path);
+    console.log('Has access token:', !!accessToken);
+    console.log('Has refresh token:', !!refreshToken);
+
+    // Logout function
+    function logout() {
+        console.log('Logging out...');
+        TokenManager.clearTokens();
+        // Clear axios default headers
+        delete axios.defaults.headers.common['Authorization'];
+        window.location.href = "{% url 'login' %}";
+    }
+
+    // Redirect root "/" → login or dashboard
+    if (path === "/") {
+        window.location.href = accessToken ? "{% url 'notes' %}" : "{% url 'login' %}";
+        return;
+    }
+
+    // Show the correct header
+    if (accessToken) {
+        $("#full-header").show();
+    } else if (["{% url 'login' %}", "{% url 'register' %}"].includes(path)) {
+        $("#minimal-header").show();
+    }
+
+    // Protect pages that require login
+    if (!accessToken && ["{% url 'notes' %}", "{% url 'profile' %}"].includes(path)) {
+        alert("Please log in to access this page.");
+        window.location.href = "{% url 'login' %}";
+        return;
+    }
+
+    // Setup axios with access token
+    if (accessToken) {
+        axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+        console.log('Set Authorization header with access token');
+        
+        // Test token immediately by making a simple API call
+        setTimeout(async () => {
+            try {
+                console.log('Testing token validity on page load...');
+                await axios.get('/api/accounts/profile/');
+                console.log('Initial token validation successful');
+            } catch (error) {
+                console.log('Initial token validation failed, refresh should be triggered');
+            }
+        }, 1000);
+    }
+
+    // Flag to prevent multiple refresh attempts
+    let isRefreshing = false;
+    let failedQueue = [];
+
+    const processQueue = (error, token = null) => {
+        failedQueue.forEach(prom => {
+            if (error) {
+                prom.reject(error);
+            } else {
+                prom.resolve(token);
+            }
+        });
+        
+        failedQueue = [];
+    };
+
+    // Axios interceptor for refresh token
+    axios.interceptors.response.use(
+        response => {
+            console.log('API Response successful:', response.config.url);
+            return response;
+        },
+        async error => {
+            const originalRequest = error.config;
+            
+            console.log('API Error:', {
+                url: originalRequest?.url,
+                status: error.response?.status,
+                retry: originalRequest?._retry,
+                data: error.response?.data
+            });
+
+            if (error.response?.status === 401 && !originalRequest._retry) {
+                console.log('401 error detected, attempting token refresh...');
+                
+                // Skip refresh logic if this IS the refresh request failing
+                if (originalRequest.url.includes('/token/refresh/')) {
+                    console.log('Refresh token request failed, logging out...');
+                    alert("Your session has expired. Please log in again.");
+                    logout();
+                    return Promise.reject(error);
+                }
+                
+                if (isRefreshing) {
+                    console.log('Already refreshing, queueing request...');
+                    return new Promise((resolve, reject) => {
+                        failedQueue.push({ resolve, reject });
+                    }).then(token => {
+                        originalRequest.headers['Authorization'] = `Bearer ${token}`;
+                        return axios(originalRequest);
+                    }).catch(err => {
+                        return Promise.reject(err);
+                    });
+                }
+
+                originalRequest._retry = true;
+                isRefreshing = true;
+
+                const currentRefreshToken = TokenManager.getRefreshToken();
+                
+                if (!currentRefreshToken) {
+                    console.log('No refresh token available, logging out...');
+                    processQueue(error, null);
+                    logout();
+                    return Promise.reject(error);
+                }
+
+                try {
+                    console.log('Making refresh token request...');
+                    // Create a new axios instance without Authorization header for refresh
+                    const refreshResponse = await axios.create().post('/api/accounts/token/refresh/', { 
+                        refresh: currentRefreshToken 
+                    });
+                    
+                    const newAccessToken = refreshResponse.data.access;
+                    console.log('Token refresh successful');
+                    
+                    // Update tokens - keep the same refresh token or use new one if provided
+                    const newRefreshToken = refreshResponse.data.refresh || currentRefreshToken;
+                    TokenManager.setTokens(newAccessToken, newRefreshToken);
+                    
+                    // Update axios defaults
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
+                    originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+                    
+                    processQueue(null, newAccessToken);
+                    
+                    console.log('Retrying original request...');
+                    return axios(originalRequest);
+                    
+                } catch (refreshError) {
+                    console.error('Token refresh failed:', refreshError);
+                    console.log('Refresh error details:', {
+                        status: refreshError.response?.status,
+                        data: refreshError.response?.data,
+                        url: refreshError.config?.url
+                    });
+                    processQueue(refreshError, null);
+                    alert("Your session has expired. Please log in again.");
+                    logout();
+                    return Promise.reject(refreshError);
+                } finally {
+                    isRefreshing = false;
+                }
+            }
+
+            return Promise.reject(error);
+        }
+    );
+
+    // Logout button event
+    $("#logout-btn").on('click', function(e) {
+        e.preventDefault();
+        logout();
+    });
+
+    // Optional: Prevent back navigation after logout
+    if (accessToken) {
+        window.history.pushState(null, null, window.location.href);
+        window.onpopstate = function() {
+            window.history.pushState(null, null, window.location.href);
+        };
+    }
+
+    // Function to decode JWT and check expiration
+    function isTokenExpired(token) {
+        if (!token) return true;
+        
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const currentTime = Math.floor(Date.now() / 1000);
+            console.log('Token expires at:', new Date(payload.exp * 1000));
+            console.log('Current time:', new Date(currentTime * 1000));
+            console.log('Token expired:', payload.exp < currentTime);
+            return payload.exp < currentTime;
+        } catch (error) {
+            console.log('Error decoding token:', error);
+            return true;
+        }
+    }
+
+    // Check if token is expired before making requests
+    if (accessToken && isTokenExpired(accessToken)) {
+        console.log('Access token is expired, attempting refresh...');
+        const currentRefreshToken = TokenManager.getRefreshToken();
+        
+        if (currentRefreshToken && !isTokenExpired(currentRefreshToken)) {
+            // Manually trigger refresh
+            axios.post('/api/accounts/token/refresh/', { refresh: currentRefreshToken })
+                .then(response => {
+                    console.log('Manual token refresh successful');
+                    const newAccessToken = response.data.access;
+                    TokenManager.setTokens(newAccessToken, currentRefreshToken);
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
+                    location.reload(); // Reload page with new token
+                })
+                .catch(error => {
+                    console.log('Manual token refresh failed:', error);
+                    logout();
+                });
+        } else {
+            console.log('Refresh token is also expired, logging out...');
+            logout();
+        }
+    }
+    async function validateToken() {
+        if (!accessToken) return false;
+        
+        try {
+            console.log('Validating access token...');
+            // Make a test API call to check if token is valid
+            const response = await axios.get('/api/accounts/profile/');
+            console.log('Token validation successful');
+            return true;
+        } catch (error) {
+            console.log('Token validation failed:', error.response?.status);
+            return false;
+        }
+    }
+
+    // Function to make periodic API calls to keep session active
+    function startTokenValidation() {
+        if (!accessToken) return;
+        
+        // Validate token immediately on page load
+        validateToken();
+        
+        // Set up periodic validation every 5 minutes
+        setInterval(async () => {
+            console.log('Performing periodic token validation...');
+            await validateToken();
+        }, 5 * 60 * 1000); // 5 minutes
+    }
+
+    // Start token validation for authenticated pages
+    if (accessToken && ["{% url 'notes' %}", "{% url 'profile' %}"].includes(path)) {
+        startTokenValidation();
+    }
+
+    // Add a function to manually test the refresh mechanism
+    window.testTokenRefresh = async function() {
+        try {
+            console.log('Testing token refresh mechanism...');
+            const response = await axios.get('/api/accounts/profile/');
+            console.log('API call successful:', response.data);
+        } catch (error) {
+            console.log('API call failed:', error);
+        }
+    };
+
+    // Add debugging function to check tokens manually
+    window.debugTokens = function() {
+        const access = TokenManager.getAccessToken();
+        const refresh = TokenManager.getRefreshToken();
+        
+        console.log('=== TOKEN DEBUG INFO ===');
+        console.log('Access Token:', access ? access.substring(0, 50) + '...' : 'None');
+        console.log('Refresh Token:', refresh ? refresh.substring(0, 50) + '...' : 'None');
+        
+        if (access) {
+            const accessExpired = isTokenExpired(access);
+            console.log('Access Token Expired:', accessExpired);
+        }
+        
+        if (refresh) {
+            const refreshExpired = isTokenExpired(refresh);
+            console.log('Refresh Token Expired:', refreshExpired);
+        }
+        
+        // Test refresh token endpoint directly
+        if (refresh) {
+            console.log('Testing refresh token endpoint...');
+            axios.create().post('/api/accounts/token/refresh/', { refresh })
+                .then(response => {
+                    console.log('Refresh endpoint test SUCCESS:', response.data);
+                })
+                .catch(error => {
+                    console.log('Refresh endpoint test FAILED:', {
+                        status: error.response?.status,
+                        data: error.response?.data
+                    });
+                });
+        }
+    };
+
+    console.log('Page initialization complete');
+    console.log('Debug commands available:');
+    console.log('- testTokenRefresh() - Test the refresh mechanism');
+    console.log('- debugTokens() - Check token status and test refresh endpoint');
+});
+    </script>
+</body>
+</html>

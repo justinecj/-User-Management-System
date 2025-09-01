@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Notes{% endblock %}
+{% block content %}
+<div class="notes-container">
+    <h2>My Notes</h2>
+
+    <form id="note-form" class="note-form" enctype="multipart/form-data">
+        <input type="text" id="title" placeholder="Title" required>
+        <textarea id="description" placeholder="Description"></textarea>
+        <input type="file" id="attachment">
+        <button type="submit">Add Note</button>
+    </form>
+
+    <hr>
+
+    <ul id="notes-list" class="notes-list"></ul>
+</div>
+
+<script>
+function loadNotes() {
+    $.ajax({
+        url: "/api/notes/",
+        headers: { Authorization: "Bearer " + localStorage.getItem("access") },
+        success: function(data){
+            $("#notes-list").empty();
+            data.results.forEach(note => {
+                const createdAt = new Date(note.created_at).toLocaleString();
+                const modifiedAt = new Date(note.modified_at).toLocaleString();
+
+                let attachmentHtml = "";
+                if (note.attachment) {
+                    attachmentHtml = `<p><a href="${note.attachment}" target="_blank">📎 View Attachment</a></p>`;
+                }
+
+                $("#notes-list").append(`
+                    <li class="note-card">
+                        <div class="note-content">
+                            <h3>${note.title}</h3>
+                            <p>${note.description}</p>
+                            ${attachmentHtml}
+                            <small>
+                                <b>Created:</b> ${createdAt} <br>
+                                <b>Updated:</b> ${modifiedAt}
+                            </small>
+                        </div>
+                        <div class="note-actions">
+                            <button onclick="editNote(${note.id}, '${note.title}', '${note.description}')">Edit</button>
+                            <button onclick="deleteNote(${note.id})">Delete</button>
+                        </div>
+                    </li>
+                `);
+            });
+        },
+        error: function(err){
+            console.error("Error loading notes:", err);
+        }
+    });
+}
+
+// Handle Add Note (with attachment)
+$("#note-form").submit(function(e){
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append("title", $("#title").val());
+    formData.append("description", $("#description").val());
+    if ($("#attachment")[0].files.length > 0) {
+        formData.append("attachment", $("#attachment")[0].files[0]);
+    }
+
+    $.ajax({
+        url: "/api/notes/",
+        method: "POST",
+        headers: { Authorization: "Bearer " + localStorage.getItem("access") },
+        processData: false,
+        contentType: false,
+        data: formData,
+        success: function(){
+            loadNotes();
+            $("#note-form")[0].reset();
+        }
+    });
+});
+
+function editNote(id, title, description) {
+    $("#title").val(title);
+    $("#description").val(description);
+    $("#note-form button").text("Update Note");
+
+    $("#note-form").off("submit").submit(function(e){
+        e.preventDefault();
+        const formData = new FormData();
+        formData.append("title", $("#title").val());
+        formData.append("description", $("#description").val());
+        if ($("#attachment")[0].files.length > 0) {
+            formData.append("attachment", $("#attachment")[0].files[0]);
+        }
+
+        $.ajax({
+            url: "/api/notes/" + id + "/",
+            method: "PUT",
+            headers: { Authorization: "Bearer " + localStorage.getItem("access") },
+            processData: false,
+            contentType: false,
+            data: formData,
+            success: function(){
+                loadNotes();
+                $("#note-form")[0].reset();
+                $("#note-form button").text("Add Note");
+                $("#note-form").off("submit").submit(addNoteHandler);
+            }
+        });
+    });
+}
+
+function addNoteHandler(e){
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append("title", $("#title").val());
+    formData.append("description", $("#description").val());
+    if ($("#attachment")[0].files.length > 0) {
+        formData.append("attachment", $("#attachment")[0].files[0]);
+    }
+
+    $.ajax({
+        url: "/api/notes/",
+        method: "POST",
+        headers: { Authorization: "Bearer " + localStorage.getItem("access") },
+        processData: false,
+        contentType: false,
+        data: formData,
+        success: function(){
+            loadNotes();
+            $("#note-form")[0].reset();
+        }
+    });
+}
+
+function deleteNote(id) {
+    $.ajax({
+        url: "/api/notes/" + id + "/",
+        method: "DELETE",
+        headers: { Authorization: "Bearer " + localStorage.getItem("access") },
+        success: loadNotes
+    });
+}
+
+$(document).ready(loadNotes);
+</script>
+{% endblock %}
