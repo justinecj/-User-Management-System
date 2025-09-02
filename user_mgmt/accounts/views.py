@@ -17,43 +17,6 @@ def register_view(request):
         return Response({"detail": "User registered"}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# # Login (function-based using TokenObtainPairSerializer)
-# @api_view(["POST"])
-# @permission_classes([AllowAny])
-# def login_view(request):
-#     serializer = TokenObtainPairSerializer(data=request.data)
-#     try:
-#         serializer.is_valid(raise_exception=True)
-#     except Exception as e:
-#         return Response({"detail": "Invalid credentials", "errors": serializer.errors}, status=status.HTTP_401_UNAUTHORIZED)
-#     return Response(serializer.validated_data, status=status.HTTP_200_OK)
-
-# # Token refresh (function-based)
-# from rest_framework_simplejwt.serializers import TokenRefreshSerializer
-
-# @api_view(["POST"])
-# @permission_classes([AllowAny])
-# def token_refresh_view(request):
-#     serializer = TokenRefreshSerializer(data=request.data)
-#     try:
-#         serializer.is_valid(raise_exception=True)
-#     except Exception:
-#         return Response({"detail": "Invalid refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
-#     return Response(serializer.validated_data, status=status.HTTP_200_OK)
-
-# # Logout - blacklist refresh
-# @api_view(["POST"])
-# @permission_classes([IsAuthenticated])
-# def logout_view(request):
-#     refresh_token = request.data.get("refresh")
-#     if not refresh_token:
-#         return Response({"detail": "Refresh token required"}, status=status.HTTP_400_BAD_REQUEST)
-#     try:
-#         token = RefreshToken(refresh_token)
-#         token.blacklist()
-#     except Exception:
-#         return Response({"detail": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
-#     return Response({"detail": "Logged out"}, status=status.HTTP_205_RESET_CONTENT)
 
 # Profile endpoints
 @api_view(["GET", "PUT"])
