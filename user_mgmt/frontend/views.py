@@ -56,16 +56,16 @@ def register_view(request):
     return render(request, 'register.html')
 
 @never_cache
-@jwt_login_required
+# @jwt_login_required
 def dashboard_view(request):
     return render(request, 'index.html')
 
 @never_cache
-@jwt_login_required
+# @jwt_login_required
 def change_password_page(request):
     return render(request, 'change_password.html')
 
 @never_cache
-@jwt_login_required
+# @jwt_login_required
 def profile_view(request):
     return render(request, "profile.html")
